@@ -43,7 +43,7 @@
         <spring.data.version>2.3.0.RELEASE</spring.data.version>
         <spring.boot.test.version>2.3.0.RELEASE</spring.boot.test.version>
 
-        <org.apache.tinkerpop.gremlin.driver.version>3.2.4</org.apache.tinkerpop.gremlin.driver.version>
+        <org.apache.tinkerpop.gremlin.driver.version>3.4.0</org.apache.tinkerpop.gremlin.driver.version>
         <apache.commons.lang3.version>3.7</apache.commons.lang3.version>
         <org.projectlombok.version>1.16.18</org.projectlombok.version>
         <mockito.core.version>2.8.9</mockito.core.version>
