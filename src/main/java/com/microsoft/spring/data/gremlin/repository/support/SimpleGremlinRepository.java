@@ -133,5 +133,9 @@ public class SimpleGremlinRepository<T, ID extends Serializable> implements Grem
     public boolean existsById(@NonNull ID id) {
         return this.operations.existsById(id, this.information.createGremlinSource());
     }
+
+    public Iterable<T> findAllByQuery(@NonNull List<String> queries) {
+        return this.operations.findByQuery(queries, this.information.createGremlinSource());
+    }
 }
 

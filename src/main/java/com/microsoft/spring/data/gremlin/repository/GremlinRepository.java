@@ -10,11 +10,14 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 
 import java.io.Serializable;
+import java.util.List;
 
 @NoRepositoryBean
 public interface GremlinRepository<T, ID extends Serializable> extends CrudRepository<T, ID> {
 
     Iterable<T> findAll(Class<T> domainClass);
+
+    Iterable<T> findAllByQuery(List<String> queryList);
 
     void deleteAll(GremlinEntityType type);
 

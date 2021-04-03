@@ -8,6 +8,7 @@ package com.microsoft.spring.data.gremlin.query;
 import com.microsoft.spring.data.gremlin.annotation.EdgeFrom;
 import com.microsoft.spring.data.gremlin.annotation.EdgeTo;
 import com.microsoft.spring.data.gremlin.annotation.GeneratedValue;
+import com.microsoft.spring.data.gremlin.common.Constants;
 import com.microsoft.spring.data.gremlin.common.GremlinEntityType;
 import com.microsoft.spring.data.gremlin.common.GremlinFactory;
 import com.microsoft.spring.data.gremlin.common.GremlinUtils;
@@ -41,9 +42,7 @@ import org.springframework.util.Assert;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.stream.Collectors.toList;
@@ -94,12 +93,30 @@ public class GremlinTemplate implements GremlinOperations, ApplicationContextAwa
     private List<Result> executeQueryParallel(@NonNull List<String> queries) {
         return queries.parallelStream()
                 .map(q -> getGremlinClient().submit(q).all())
-                .collect(toList()).parallelStream().flatMap(f -> {
+                .collect(toList())
+                .parallelStream()
+                .flatMap(f -> {
                     try {
                         return f.get().stream();
                     } catch (InterruptedException | ExecutionException e) {
                         throw new GremlinQueryException("unable to complete query from gremlin", e);
                     }
+                })
+                .flatMap(r -> {
+                    final List<Result> results = new ArrayList<>();
+                    Object object = r.getObject();
+                    while (object instanceof LinkedHashMap
+                            && ((LinkedHashMap) object).containsKey(Constants.PROPERTY_VALUE_WITH_AT)) {
+                        object = ((LinkedHashMap) object).get(Constants.PROPERTY_VALUE_WITH_AT);
+                    }
+
+                    if (object instanceof ArrayList) {
+                        ((ArrayList) object).forEach(o -> results.add(new Result(o)));
+                    } else {
+                        results.add(new Result(object));
+                    }
+
+                    return results.stream();
                 })
                 .collect(toList());
     }
@@ -349,7 +366,10 @@ public class GremlinTemplate implements GremlinOperations, ApplicationContextAwa
     }
 
     private <T> List<T> recoverDomainList(@NonNull GremlinSource<T> source, @NonNull List<Result> results) {
-        return results.stream().map(r -> recoverDomain(source, Collections.singletonList(r))).collect(toList());
+        return results
+                .stream()
+                .map(r -> recoverDomain(source, Collections.singletonList(r)))
+                .collect(toList());
     }
 
     private <T> T recoverGraphDomain(@NonNull GremlinSourceGraph<T> source, @NonNull List<Result> results) {
@@ -374,6 +394,17 @@ public class GremlinTemplate implements GremlinOperations, ApplicationContextAwa
     public <T> List<T> find(@NonNull GremlinQuery query, @NonNull GremlinSource<T> source) {
         final QueryScriptGenerator generator = new QueryFindScriptGenerator(source);
         final List<String> queryList = generator.generate(query);
+        final List<Result> results = this.executeQuery(queryList);
+
+        if (results.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return this.recoverDomainList(source, results);
+    }
+
+    @Override
+    public <T> List<T> findByQuery(@NonNull List<String> queryList, @NonNull GremlinSource<T> source) {
         final List<Result> results = this.executeQuery(queryList);
 
         if (results.isEmpty()) {
