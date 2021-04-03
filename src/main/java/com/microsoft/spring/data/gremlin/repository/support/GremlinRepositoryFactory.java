@@ -5,7 +5,9 @@
  */
 package com.microsoft.spring.data.gremlin.repository.support;
 
+import com.microsoft.spring.data.gremlin.common.GremlinFactory;
 import com.microsoft.spring.data.gremlin.query.GremlinOperations;
+import com.microsoft.spring.data.gremlin.query.query.GraphRepositoryGremlinQuery;
 import com.microsoft.spring.data.gremlin.query.query.GremlinQueryMethod;
 import com.microsoft.spring.data.gremlin.query.query.PartTreeGremlinQuery;
 import org.springframework.context.ApplicationContext;
@@ -55,14 +57,16 @@ public class GremlinRepositoryFactory extends RepositoryFactorySupport {
     @Override
     protected Optional<QueryLookupStrategy> getQueryLookupStrategy(
             QueryLookupStrategy.Key key, QueryMethodEvaluationContextProvider provider) {
-        return Optional.of(new GremlinQueryLookupStrategy(this.operations));
+        return Optional.of(new GremlinQueryLookupStrategy(this.context, this.operations));
     }
 
     private static class GremlinQueryLookupStrategy implements QueryLookupStrategy {
 
         private final GremlinOperations operations;
+        private final ApplicationContext context;
 
-        public GremlinQueryLookupStrategy(@NonNull GremlinOperations operations) {
+        public GremlinQueryLookupStrategy(@NonNull ApplicationContext context, @NonNull GremlinOperations operations) {
+            this.context = context;
             this.operations = operations;
         }
 
@@ -73,7 +77,12 @@ public class GremlinRepositoryFactory extends RepositoryFactorySupport {
 
             Assert.notNull(queryMethod, "queryMethod should not be null");
             Assert.notNull(this.operations, "operations should not be null");
-
+            if (queryMethod.hasAnnotatedQuery()) {
+                final GremlinFactory gremlinFactory = context.getBean(GremlinFactory.class);
+                Assert.notNull(gremlinFactory, "gremlinFactory bean should not be null");
+                return new GraphRepositoryGremlinQuery(gremlinFactory.getGremlinClient(), queryMethod, operations);
+            }
+            
             return new PartTreeGremlinQuery(queryMethod, this.operations);
         }
     }

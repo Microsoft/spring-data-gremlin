@@ -32,6 +32,7 @@ public class PersonRepositoryIT {
 
     private final Person person = new Person(TestConstants.VERTEX_PERSON_ID, TestConstants.VERTEX_PERSON_NAME);
     private final Person person0 = new Person(TestConstants.VERTEX_PERSON_0_ID, TestConstants.VERTEX_PERSON_0_NAME);
+    private final Person person1 = new Person(TestConstants.VERTEX_PERSON_1_ID, TestConstants.VERTEX_PERSON_1_NAME);
     private final Project project = new Project(TestConstants.VERTEX_PROJECT_ID, TestConstants.VERTEX_PROJECT_NAME,
             TestConstants.VERTEX_PROJECT_URI);
 
@@ -230,6 +231,18 @@ public class PersonRepositoryIT {
 
         this.repository.deleteAll();
         Assert.assertFalse(this.repository.findAll().iterator().hasNext());
+    }
+    
+    
+    @Test
+    public void testQueryAnnotation() {
+        final Person result = this.repository.save(this.person1);
+        Assert.assertNotNull(result);
+        final Person foundPerson = this.repository.findPersonByName(this.person1.getName());
+
+        Assert.assertNotNull(foundPerson);
+        Assert.assertEquals(foundPerson.getId(), this.person1.getId());
+        Assert.assertEquals(foundPerson.getName(), this.person1.getName());
     }
 }
 
