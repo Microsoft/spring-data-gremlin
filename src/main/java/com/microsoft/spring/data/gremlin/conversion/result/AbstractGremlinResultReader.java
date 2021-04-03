@@ -12,7 +12,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.util.Assert;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @NoArgsConstructor
@@ -22,20 +22,19 @@ public abstract class AbstractGremlinResultReader {
     /**
      * properties's organization is a little complicated.
      * <p>
-     * properties is LinkedHashMap<K, V>
+     * properties is Map<K, V>
      * K is String
      * V is ArrayList<T>
-     * T is LinkedHashMap<String, String>
+     * T is Map<String, String>
      */
     private Object readProperty(@NonNull Object value) {
         Assert.isInstanceOf(ArrayList.class, value, "should be instance of ArrayList");
 
-        @SuppressWarnings("unchecked") final ArrayList<LinkedHashMap<String, String>> mapList
-                = (ArrayList<LinkedHashMap<String, String>>) value;
+        final List listValue = (List) value;
+        Assert.isTrue(listValue.size() == 1, "should be only 1 element in ArrayList");
+        final Map map = (Map) listValue.get(0);
 
-        Assert.isTrue(mapList.size() == 1, "should be only 1 element in ArrayList");
-
-        return mapList.get(0).get(Constants.PROPERTY_VALUE);
+        return map.get(Constants.PROPERTY_VALUE);
     }
 
     protected void readResultProperties(@NonNull Map<String, Object> properties, @NonNull GremlinSource source) {
